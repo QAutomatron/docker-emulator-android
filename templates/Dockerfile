@@ -33,8 +33,8 @@ RUN dpkg --add-architecture i386 && \
     rm /tmp/android-sdk-linux.zip && \
     # Customized steps per specific platform
     yes | sdkmanager --no_https --licenses && \
-    yes | sdkmanager emulator tools platform-tools "platforms;{{ platform }}" "system-images;{{ platform }};google_apis;x86" --verbose | uniq && \
-    echo no | avdmanager create avd -n "Pixel2" --package "system-images;{{ platform }};google_apis;x86" --tag google_apis && \
+    yes | sdkmanager emulator tools platform-tools "platforms;{{ platform }}" "system-images;{{ platform }};google_apis;x86_64" --verbose | uniq && \
+    echo no | avdmanager create avd -n "Pixel2" --package "system-images;{{ platform }};google_apis;x86_64" --tag google_apis && \
     # Unfilter devices (now local because CI downloads from github are unstable)
     # curl -o /root/.android/adb_usb.ini https://raw.githubusercontent.com/apkudo/adbusbini/master/adb_usb.ini && \
     DEBIAN_FRONTEND=noninteractive apt-get purge -yq unzip openjdk-8-jdk && \
@@ -60,6 +60,9 @@ COPY config.ini /root/.android/avd/Pixel2.avd/config.ini
 
 # Expose adb
 EXPOSE 5037 5554 5555 5900
+
+HEALTHCHECK --interval=2s --timeout=40s --retries=1 \
+    CMD timeout 40 adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
 
 # Add script
 COPY start.sh /start.sh
